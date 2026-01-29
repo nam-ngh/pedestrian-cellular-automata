@@ -32,7 +32,7 @@ class HexGrid:
         self.cells = np.zeros((width, height), dtype=int)
         self.pedestrians: list[Pedestrian] = []
         self.static_field = None
-        self.target = None
+        self.targets = []
         
     def get_neighbors(self, q: int, r: int) -> list[tuple[int, int]]:
         neighbors = []
@@ -42,16 +42,19 @@ class HexGrid:
                 neighbors.append((nq, nr))
         return neighbors
     
-    def set_target(self, q: int, r: int):
-        self.target = (q, r)
+    def set_targets(self, q: int, r: int):
+        self.targets.append((q, r))
         self.cells[q, r] = CellState.TARGET
         self.static_field = self._compute_static_field()
     
     def _compute_static_field(self) -> np.ndarray:
         field = np.full((self.width, self.height), np.inf)
-        field[self.target] = 0
-        queue = deque([self.target])
+        queue = deque()
+        for tq, tr in self.targets:
+            field[tq, tr] = 0
+            queue.append((tq, tr))
         
+        # BFS from all targets simultaneously
         while queue:
             q, r = queue.popleft()
             for nq, nr in self.get_neighbors(q, r):
@@ -72,46 +75,48 @@ class HexGrid:
         if self.cells[q, r] == CellState.EMPTY:
             self.cells[q, r] = CellState.OBSTACLE
     
-    def _compute_transition_probs(self, ped: Pedestrian) -> dict:
+    def _get_best_move(self, ped: Pedestrian) -> tuple[int, int] | None:
+        """Find the neighboring cell closest to target that's available."""
         q, r = ped.q, ped.r
-        probs = {}
-        k_s = 2.0  # Sensitivity parameter
+        best_cell = None
+        curr_dist = self.static_field[q, r]
+        available_cells = []
         
         for nq, nr in self.get_neighbors(q, r):
-            if self.cells[nq, nr] == CellState.EMPTY:
+            # First check if cell is empty or target
+            if self.cells[nq, nr] == CellState.EMPTY or self.cells[nq, nr] == CellState.TARGET:
+                available_cells.append((nq, nr))
                 distance = self.static_field[nq, nr]
-                if distance < np.inf:
-                    probs[(nq, nr)] = np.exp(k_s * (self.static_field[q, r] - distance))
-            elif self.cells[nq, nr] == CellState.TARGET:
-                probs[(nq, nr)] = np.exp(k_s * 2)
+                # If cell is closer to target, move to this cell
+                if distance < curr_dist:
+                    curr_dist = distance
+                    best_cell = (nq, nr)
         
-        if probs:
-            total = sum(probs.values())
-            probs = {k: v / total for k, v in probs.items()}
+        # If no cells are closer to target, move randomly from available cells
+        if best_cell is None and available_cells:
+            best_cell = random.choice(available_cells)
         
-        return probs
+        return best_cell
     
     def step(self) -> int:
-        random.shuffle(self.pedestrians)
+        # Sort pedestrians by distance to target (closest first gets priority)
+        self.pedestrians.sort(key=lambda p: self.static_field[p.q, p.r])
+        
         reached_target = []
         
         for ped in self.pedestrians:
-            probs = self._compute_transition_probs(ped)
+            best_move = self._get_best_move(ped)
+            nq, nr = best_move
             
-            if not probs:
-                continue
-            
-            cells = list(probs.keys())
-            weights = list(probs.values())
-            chosen = random.choices(cells, weights=weights)[0]
-            
-            if self.cells[chosen[0], chosen[1]] == CellState.TARGET:
+            # Check if reached target
+            if self.cells[nq, nr] == CellState.TARGET:
                 self.cells[ped.q, ped.r] = CellState.EMPTY
                 reached_target.append(ped)
                 continue
             
+            # Move pedestrian
             self.cells[ped.q, ped.r] = CellState.EMPTY
-            ped.q, ped.r = chosen
+            ped.q, ped.r = nq, nr
             self.cells[ped.q, ped.r] = CellState.PEDESTRIAN
         
         for ped in reached_target:

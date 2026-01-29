@@ -15,7 +15,7 @@ class HexGridVisualizer:
         CellState.TARGET: '#ff6b6b',
     }
     
-    def __init__(self, grid: HexGrid, hex_size: float = 0.58):
+    def __init__(self, grid: HexGrid, hex_size: float = 0.3):
         self.grid = grid
         self.hex_size = hex_size
         self.fig = None
@@ -23,6 +23,7 @@ class HexGridVisualizer:
         self.patches = None
         self.text = None
         self.total_reached = 0
+        self.end_frame = None
         
     def _axial_to_pixel(self, q: int, r: int) -> tuple[float, float]:
         x = self.hex_size * 1.5 * q
@@ -44,7 +45,7 @@ class HexGridVisualizer:
                     (x, y),
                     numVertices=6,
                     radius=self.hex_size,
-                    orientation=0,
+                    orientation=np.pi/6,
                     facecolor=self.COLORS[state],
                     edgecolor='#3d3d3d',
                     linewidth=0.5
@@ -84,8 +85,12 @@ class HexGridVisualizer:
                 state = self.grid.cells[q, r]
                 self.patches[(q, r)].set_facecolor(self.COLORS[state])
         
+        if len(self.grid.pedestrians) == 0 and self.end_frame is None:
+            self.end_frame = str(frame)
+
         self.text.set_text(
             f'Frame: {frame}\n'
+            f'End frame: {self.end_frame if self.end_frame else "-"}\n'
             f'Pedestrians: {len(self.grid.pedestrians)}\n'
             f'Reached target: {self.total_reached}'
         )
