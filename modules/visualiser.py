@@ -9,9 +9,9 @@ class HexGridVisualizer:
     """Visualize the hexagonal grid with animation."""
     
     COLORS = {
-        CellState.EMPTY: "#ede5c2",
+        CellState.EMPTY: "#fff9dd",
         CellState.PEDESTRIAN: "#30529C",
-        CellState.OBSTACLE: '#1a1a1a',
+        CellState.OBSTACLE: '#646464',
         CellState.TARGET: '#ff6b6b',
     }
     
@@ -27,8 +27,8 @@ class HexGridVisualizer:
     
     def setup_plot(self):
         self.fig, self.ax = plt.subplots(figsize=(12, 10), dpi=80)
-        self.fig.patch.set_facecolor('#1a1a1a')
-        self.ax.set_facecolor('#1a1a1a')
+        self.fig.patch.set_facecolor("#646464")
+        self.ax.set_facecolor('#646464')
         
         self.patches = {}
         for q in range(self.grid.width):
@@ -42,20 +42,20 @@ class HexGridVisualizer:
                     radius=self.hex_size,
                     orientation=np.pi/6,
                     facecolor=self.COLORS[state],
-                    edgecolor='#1a1a1a',
-                    linewidth=0.5
+                    edgecolor='#646464',
+                    linewidth=0.1
                 )
                 self.ax.add_patch(hexagon)
                 self.patches[(q, r)] = hexagon
         
         self.text = self.ax.text(
-            0.02, 0.98, '', 
+            0.02, 0.88, '', 
             transform=self.ax.transAxes,
             fontsize=12,
             color='white',
             verticalalignment='top',
             fontfamily='monospace',
-            bbox=dict(boxstyle='round', facecolor='#2d2d2d', alpha=0.8)
+            bbox=dict(boxstyle='round', facecolor="#3F3F3F", alpha=0.8)
         )
         
         self.ax.set_aspect('equal')
@@ -63,8 +63,8 @@ class HexGridVisualizer:
         self.ax.axis('off')
         
         self.ax.set_title(
-            'Hexagonal CA: Pedestrian Dynamics',
-            fontsize=16,
+            'Hexagonal Cellular Automata: Evacuation Dynamics in a 2-exit Circular Hall',
+            fontsize=18,
             color='white',
             pad=20
         )

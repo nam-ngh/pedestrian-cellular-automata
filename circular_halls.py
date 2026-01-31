@@ -13,26 +13,26 @@ def main(exits: str, seed: int=42):
     np.random.seed(seed)
 
     ##### SIMULATION PARAMETERS #####
-    cartesian_r = 18
-    hall_radius = 56
-    w, h = 128, 128
-    mid_w, mid_h = w // 2, h // 2
     num_pedestrians = 500
+    cartesian_r = 12.62 # hall radius in cartesian coords
+    hall_radius = int(cartesian_r//(0.2*1.616)) # hall radius in hex
+    w, h = 86, 86 # parent grid dimensions
     ##### _____________________ #####
 
     # BUILD HALL
-    # Cartesian Area = 1000
-    # Cartesian Radius ~ 18
-    # Avg axial Radius = 18/(0.2*1.616) ~ 56
+    # Cartesian Area = 500
+    # Cartesian Radius ~ 12.62
+    # Avg axial Radius = 12.62/(0.2*1.616) ~ 39
     # (hex_size = 0.2, 1 cartesian ~ 1 axial x 1.616)
-    # With flat-top orientation, side-r = 18/(0.2*1.5), long-r = 18/(0.2*np.sqrt(3))
+    # With flat-top orientation, side-r = 12.62/(0.2*1.5), long-r = 12.62/(0.2*np.sqrt(3))
 
     grid = HexGrid(w, h)
     grid.build_circular_hall(hall_radius)
     # Set exits
     exit_doors = []
-    side_radius = int(cartesian_r // (0.2*1.5)) + 1
-    long_radius = int(cartesian_r // (0.2*np.sqrt(3))) + 1
+    side_radius = int(cartesian_r // (0.2*1.5))
+    long_radius = int(cartesian_r // (0.2*np.sqrt(3)))
+    mid_w, mid_h = w // 2, h // 2
 
     q_3oclock = mid_w + side_radius
     q_9oclock = mid_w - side_radius
@@ -44,31 +44,31 @@ def main(exits: str, seed: int=42):
 
     if exits == 'opposite':
         # RHS doors
-        exit_doors.append((q_3oclock, r_3oclock + 2))
+        # exit_doors.append((q_3oclock, r_3oclock + 2))
         exit_doors.append((q_3oclock, r_3oclock + 1))
         exit_doors.append((q_3oclock, r_3oclock + 0))
         exit_doors.append((q_3oclock, r_3oclock - 1))
-        exit_doors.append((q_3oclock, r_3oclock - 2))
+        # exit_doors.append((q_3oclock, r_3oclock - 2))
         # LHS doors
-        exit_doors.append((q_9oclock, r_9oclock + 2))
+        # exit_doors.append((q_9oclock, r_9oclock + 2))
         exit_doors.append((q_9oclock, r_9oclock + 1))
         exit_doors.append((q_9oclock, r_9oclock + 0))
         exit_doors.append((q_9oclock, r_9oclock - 1))
-        exit_doors.append((q_9oclock, r_9oclock - 2))
+        # exit_doors.append((q_9oclock, r_9oclock - 2))
         save_path = 'outputs/circle_opposite_sim.gif'
     elif exits == 'quarter':
         # RHS doors
-        exit_doors.append((q_3oclock, r_3oclock + 2))
+        # exit_doors.append((q_3oclock, r_3oclock + 2))
         exit_doors.append((q_3oclock, r_3oclock + 1))
         exit_doors.append((q_3oclock, r_3oclock + 0))
         exit_doors.append((q_3oclock, r_3oclock - 1))
-        exit_doors.append((q_3oclock, r_3oclock - 2))
+        # exit_doors.append((q_3oclock, r_3oclock - 2))
         # Top doors
-        exit_doors.append((q_12oclock + 2, r_12oclock - 2//2))
+        # exit_doors.append((q_12oclock + 2, r_12oclock - 2//2))
         exit_doors.append((q_12oclock + 1, r_12oclock - 1//2))
         exit_doors.append((q_12oclock + 0, r_12oclock - 0//2))
         exit_doors.append((q_12oclock - 1, r_12oclock - (-1//2)))
-        exit_doors.append((q_12oclock - 2, r_12oclock - (-2//2)))
+        # exit_doors.append((q_12oclock - 2, r_12oclock - (-2//2)))
         save_path = 'outputs/circle_quarter_sim.gif'
     else:
         raise ValueError('Exits must be "opposite" or "quarter"')
@@ -91,7 +91,7 @@ def main(exits: str, seed: int=42):
     
     # Create visualizer and save animation
     viz = HexGridVisualizer(grid)
-    viz.save_animation(frames=180, save_path=save_path)
+    viz.save_animation(frames=160, save_path=save_path)
 
 if __name__ == "__main__":
     main(exits='quarter')

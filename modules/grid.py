@@ -44,12 +44,6 @@ class HexGrid:
             if 0 <= nq < self.width and 0 <= nr < self.height:
                 neighbors.append((nq, nr))
         return neighbors
-    
-    # @staticmethod
-    # def axial_to_cartesian(q: int, r: int, size: float=1) -> tuple[float, float]:
-    #     x = size * 1.5 * q
-    #     y = size * np.sqrt(3) * (r + 0.5 * (q % 2))
-    #     return x, y
 
     @staticmethod
     def axial_to_cartesian(q: int, r: int, size: float = 1) -> tuple[float, float]:
