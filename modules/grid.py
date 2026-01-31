@@ -3,6 +3,7 @@ from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
 import random
+import heapq
 
 class CellState(IntEnum):
     EMPTY = 0
@@ -33,19 +34,28 @@ class HexGrid:
         self.pedestrians: list[Pedestrian] = []
         self.static_field = None
         self.targets = []
-        
+    
     def get_neighbors(self, q: int, r: int) -> list[tuple[int, int]]:
         neighbors = []
-        for dq, dr in self.DIRECTIONS:
+        directions = self.DIRECTIONS.copy()
+        random.shuffle(directions)
+        for dq, dr in directions:
             nq, nr = q + dq, r + dr
             if 0 <= nq < self.width and 0 <= nr < self.height:
                 neighbors.append((nq, nr))
         return neighbors
     
-    def set_targets(self, q: int, r: int):
-        self.targets.append((q, r))
-        self.cells[q, r] = CellState.TARGET
-        self.static_field = self._compute_static_field()
+    # @staticmethod
+    # def axial_to_cartesian(q: int, r: int, size: float=1) -> tuple[float, float]:
+    #     x = size * 1.5 * q
+    #     y = size * np.sqrt(3) * (r + 0.5 * (q % 2))
+    #     return x, y
+
+    @staticmethod
+    def axial_to_cartesian(q: int, r: int, size: float = 1) -> tuple[float, float]:
+        x = size * (3/2 * q)
+        y = size * (np.sqrt(3)/2 * q + np.sqrt(3) * r)
+        return x, y
     
     def _compute_static_field(self) -> np.ndarray:
         field = np.full((self.width, self.height), np.inf)
@@ -63,6 +73,15 @@ class HexGrid:
                     queue.append((nq, nr))
         return field
     
+    def set_targets(self, targets):
+        for t in targets:
+            q, r = t
+            self.targets.append((q,r))
+            self.cells[q, r] = CellState.TARGET
+
+        print(f'{len(targets)} targets set!')
+        self.static_field = self._compute_static_field()
+    
     def add_pedestrian(self, q: int, r: int, ped_id: int = 0) -> bool:
         if self.cells[q, r] == CellState.EMPTY:
             ped = Pedestrian(q=q, r=r, id=ped_id)
@@ -74,9 +93,26 @@ class HexGrid:
     def add_obstacle(self, q: int, r: int):
         if self.cells[q, r] == CellState.EMPTY:
             self.cells[q, r] = CellState.OBSTACLE
+
+    def build_circular_hall(self, radius: int):
+        centre_q, centre_r = int(self.width/2), int(self.height/2)
+        centre_x, centre_y = self.axial_to_cartesian(centre_q, centre_r)
+        for q in range(self.width):
+            for r in range(self.height):
+                cell_x, cell_y = self.axial_to_cartesian(q, r)
+                dist = np.sqrt((cell_x - centre_x)**2 + (cell_y - centre_y)**2)
+                if (radius * 1.616) < dist:
+                    self.add_obstacle(q,r)
     
-    def _get_best_move(self, ped: Pedestrian) -> tuple[int, int] | None:
-        """Find the neighboring cell closest to target that's available."""
+    def _get_move(self, ped: Pedestrian, rationality: float=0.8) -> tuple[int, int] | None:
+        """
+        Moving logic
+        
+        :params ped: a Pedestrian
+        :params rationality: the chance a person makes a rational step. 
+            0 is completely irrational
+            1 is perfectly rational
+        """
         q, r = ped.q, ped.r
         best_cell = None
         curr_dist = self.static_field[q, r]
@@ -91,12 +127,15 @@ class HexGrid:
                 if distance < curr_dist:
                     curr_dist = distance
                     best_cell = (nq, nr)
+                    break
         
-        # If no cells are closer to target, move randomly from available cells
-        if best_cell is None and available_cells:
-            best_cell = random.choice(available_cells)
+        if best_cell is not None and random.random() < rationality:
+            return best_cell
         
-        return best_cell
+        if available_cells:
+            return random.choice(available_cells)
+    
+        return None
     
     def step(self) -> int:
         # Sort pedestrians by distance to target (closest first gets priority)
@@ -105,9 +144,12 @@ class HexGrid:
         reached_target = []
         
         for ped in self.pedestrians:
-            best_move = self._get_best_move(ped)
-            nq, nr = best_move
-            
+            next_move = self._get_move(ped)
+            if next_move is None:
+                continue
+            elif next_move:
+                nq, nr = next_move
+
             # Check if reached target
             if self.cells[nq, nr] == CellState.TARGET:
                 self.cells[ped.q, ped.r] = CellState.EMPTY

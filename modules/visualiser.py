@@ -9,13 +9,13 @@ class HexGridVisualizer:
     """Visualize the hexagonal grid with animation."""
     
     COLORS = {
-        CellState.EMPTY: '#2d2d2d',
-        CellState.PEDESTRIAN: '#4ecdc4',
+        CellState.EMPTY: "#ede5c2",
+        CellState.PEDESTRIAN: "#30529C",
         CellState.OBSTACLE: '#1a1a1a',
         CellState.TARGET: '#ff6b6b',
     }
     
-    def __init__(self, grid: HexGrid, hex_size: float = 0.3):
+    def __init__(self, grid: HexGrid, hex_size: float = 0.2):
         self.grid = grid
         self.hex_size = hex_size
         self.fig = None
@@ -23,12 +23,7 @@ class HexGridVisualizer:
         self.patches = None
         self.text = None
         self.total_reached = 0
-        self.end_frame = None
-        
-    def _axial_to_pixel(self, q: int, r: int) -> tuple[float, float]:
-        x = self.hex_size * 1.5 * q
-        y = self.hex_size * np.sqrt(3) * (r + 0.5 * (q % 2))
-        return x, y
+        self.end_frame = '-'
     
     def setup_plot(self):
         self.fig, self.ax = plt.subplots(figsize=(12, 10), dpi=80)
@@ -38,7 +33,7 @@ class HexGridVisualizer:
         self.patches = {}
         for q in range(self.grid.width):
             for r in range(self.grid.height):
-                x, y = self._axial_to_pixel(q, r)
+                x, y = self.grid.axial_to_cartesian(q, r, self.hex_size)
                 state = self.grid.cells[q, r]
                 
                 hexagon = RegularPolygon(
@@ -47,7 +42,7 @@ class HexGridVisualizer:
                     radius=self.hex_size,
                     orientation=np.pi/6,
                     facecolor=self.COLORS[state],
-                    edgecolor='#3d3d3d',
+                    edgecolor='#1a1a1a',
                     linewidth=0.5
                 )
                 self.ax.add_patch(hexagon)
@@ -85,22 +80,20 @@ class HexGridVisualizer:
                 state = self.grid.cells[q, r]
                 self.patches[(q, r)].set_facecolor(self.COLORS[state])
         
-        if len(self.grid.pedestrians) == 0 and self.end_frame is None:
+        if len(self.grid.pedestrians) == 0 and self.end_frame == '-':
             self.end_frame = str(frame)
 
         self.text.set_text(
             f'Frame: {frame}\n'
-            f'End frame: {self.end_frame if self.end_frame else "-"}\n'
+            f'End frame: {self.end_frame}\n'
             f'Pedestrians: {len(self.grid.pedestrians)}\n'
             f'Reached target: {self.total_reached}'
         )
         
         return list(self.patches.values()) + [self.text]
     
-    def save_animation(self, frames: int = 100, interval: int = 200, save_path: str = 'output.gif'):
+    def save_animation(self, frames: int = 100, interval: int = 200, save_path: str = 'outputs/sim.gif'):
         self.setup_plot()
-        
-        print(f"Generating {frames} frames...")
         anim = FuncAnimation(
             self.fig,
             self.update_display,
@@ -110,7 +103,7 @@ class HexGridVisualizer:
             repeat=False
         )
         
-        print(f"Saving animation to {save_path}...")
-        anim.save(save_path, writer='pillow', fps=5)
+        print(f"Simulating and saving animation to {save_path}...")
+        anim.save(save_path, writer='pillow', fps=1000/interval)
         plt.close()
         print("Done!")
