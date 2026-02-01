@@ -5,7 +5,7 @@ import numpy as np
 
 def main(exits: str, seed: int=42):
     '''
-    Circular hall simulations. Saves resulting GIFs to .outputs
+    Square hall simulations. Saves resulting GIFs to .outputs
 
     :params exits: "opposite" or "quarter"
     '''
@@ -14,64 +14,53 @@ def main(exits: str, seed: int=42):
 
     ##### SIMULATION PARAMETERS #####
     num_pedestrians = 500
-    cartesian_r = 12.62 # hall radius in cartesian coords
+    cartesian_side = 22.36
     w, h = 106, 106 # parent grid dimensions
     ##### _____________________ #####
 
     # BUILD HALL
     # Cartesian Area = 500
-    # Cartesian Radius ~ 12.62
-    # Avg axial Radius = 12.62/(0.2*1.616) ~ 39
-    # (hex_size = 0.2, 1 cartesian ~ 1 axial x 1.616)
-    # With flat-top orientation, side-r = 12.62/(0.2*1.5), long-r = 12.62/(0.2*np.sqrt(3))
+    # Cartesian Square side len ~ 22.36
+    # With flat-top orientation, side-len = 22.36/(0.2*1.5), long-len = 22.36/(0.2*np.sqrt(3))
 
     grid = HexGrid(w, h)
 
-    hall_radius = int(cartesian_r//(0.2*1.616)) # hall radius in hex
-    grid.build_circular_hall(hall_radius)
+    hex_side_len = int(cartesian_side // (0.2*1.5))
+    hex_long_len = int(cartesian_side // (0.2*np.sqrt(3)))
+    grid.build_square_hall(side_len=hex_side_len, long_len=hex_long_len)
     
     # Set exits
     exit_doors = []
-    side_radius = int(cartesian_r // (0.2*1.5))
-    long_radius = int(cartesian_r // (0.2*np.sqrt(3)))
     mid_w, mid_h = w // 2, h // 2
 
-    q_3oclock = mid_w + side_radius
-    q_9oclock = mid_w - side_radius
+    q_3oclock = mid_w + int(hex_side_len // 2)
+    q_9oclock = mid_w - int(hex_side_len // 2)
     q_12oclock = mid_w
 
-    r_3oclock = mid_h - int(side_radius//2) # calibration for paralellogram
-    r_9oclock = mid_h + int(side_radius//2) # calibration for paralellogram
-    r_12oclock = mid_h + long_radius
+    r_3oclock = mid_h - int(hex_side_len // 4) # calibration for paralellogram
+    r_9oclock = mid_h + int(hex_side_len // 4) # calibration for paralellogram
+    r_12oclock = mid_h + int(hex_long_len // 2)
 
     if exits == 'opposite':
         # RHS doors
-        # exit_doors.append((q_3oclock, r_3oclock + 2))
         exit_doors.append((q_3oclock, r_3oclock + 1))
         exit_doors.append((q_3oclock, r_3oclock + 0))
         exit_doors.append((q_3oclock, r_3oclock - 1))
-        # exit_doors.append((q_3oclock, r_3oclock - 2))
         # LHS doors
-        # exit_doors.append((q_9oclock, r_9oclock + 2))
         exit_doors.append((q_9oclock, r_9oclock + 1))
         exit_doors.append((q_9oclock, r_9oclock + 0))
         exit_doors.append((q_9oclock, r_9oclock - 1))
-        # exit_doors.append((q_9oclock, r_9oclock - 2))
-        save_path = 'outputs/circle_opposite_sim.gif'
+        save_path = 'outputs/square_opposite_sim.gif'
     elif exits == 'quarter':
         # RHS doors
-        # exit_doors.append((q_3oclock, r_3oclock + 2))
         exit_doors.append((q_3oclock, r_3oclock + 1))
         exit_doors.append((q_3oclock, r_3oclock + 0))
         exit_doors.append((q_3oclock, r_3oclock - 1))
-        # exit_doors.append((q_3oclock, r_3oclock - 2))
         # Top doors
-        # exit_doors.append((q_12oclock + 2, r_12oclock - 2//2))
         exit_doors.append((q_12oclock + 1, r_12oclock - 1//2))
         exit_doors.append((q_12oclock + 0, r_12oclock - 0//2))
         exit_doors.append((q_12oclock - 1, r_12oclock - (-1//2)))
-        # exit_doors.append((q_12oclock - 2, r_12oclock - (-2//2)))
-        save_path = 'outputs/circle_quarter_sim.gif'
+        save_path = 'outputs/square_quarter_sim.gif'
     else:
         raise ValueError('Exits must be "opposite" or "quarter"')
 

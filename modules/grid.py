@@ -3,7 +3,6 @@ from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
 import random
-import heapq
 
 class CellState(IntEnum):
     EMPTY = 0
@@ -11,13 +10,11 @@ class CellState(IntEnum):
     OBSTACLE = 2
     TARGET = 3
 
-
 @dataclass
 class Pedestrian:
     q: int
     r: int
     id: int = 0
-
 
 class HexGrid:
     """Hexagonal grid using axial coordinates."""
@@ -35,7 +32,19 @@ class HexGrid:
         self.static_field = None
         self.targets = []
     
+    @staticmethod
+    def axial_to_cartesian(q: int, r: int, size: float = 1) -> tuple[float, float]:
+        '''
+        Converts hex-grid coordinates to cartesian coordinates, defaults hex-size = 1
+        '''
+        x = size * (3/2 * q)
+        y = size * (np.sqrt(3)/2 * q + np.sqrt(3) * r)
+        return x, y
+    
     def get_neighbors(self, q: int, r: int) -> list[tuple[int, int]]:
+        '''
+        Returns a list of neighbours in random order for any cell (q, r)
+        '''
         neighbors = []
         directions = self.DIRECTIONS.copy()
         random.shuffle(directions)
@@ -44,14 +53,12 @@ class HexGrid:
             if 0 <= nq < self.width and 0 <= nr < self.height:
                 neighbors.append((nq, nr))
         return neighbors
-
-    @staticmethod
-    def axial_to_cartesian(q: int, r: int, size: float = 1) -> tuple[float, float]:
-        x = size * (3/2 * q)
-        y = size * (np.sqrt(3)/2 * q + np.sqrt(3) * r)
-        return x, y
     
     def _compute_static_field(self) -> np.ndarray:
+        '''
+        Computes distance of every cell from the nearest target by breadth-first search
+        '''
+
         field = np.full((self.width, self.height), np.inf)
         queue = deque()
         for tq, tr in self.targets:
@@ -67,6 +74,7 @@ class HexGrid:
                     queue.append((nq, nr))
         return field
     
+    ##### GRID CONSTRUCTION FUNCTIONS #####
     def set_targets(self, targets):
         for t in targets:
             q, r = t
@@ -97,7 +105,32 @@ class HexGrid:
                 dist = np.sqrt((cell_x - centre_x)**2 + (cell_y - centre_y)**2)
                 if (radius * 1.616) < dist:
                     self.add_obstacle(q,r)
+
+    def build_square_hall(self, side_len: int, long_len: int):
+        centre_q, centre_r = int(self.width/2), int(self.height/2)
+        half_side = int(side_len // 2)
+        half_long = int(long_len // 2)
+        for q in range(self.width):
+            for r in range(self.height):
+                # Compensate for axial skew at every column
+                q_diff = q - centre_q
+                r_calibration = - int(q_diff // 2)
+                
+                outside_q = (
+                    q < centre_q - half_side
+                ) or (
+                    q > centre_q + half_side
+                )
+                outside_r = (
+                    r < centre_r - half_long + r_calibration
+                ) or (
+                    r > centre_r + half_long + r_calibration
+                )
+                
+                if outside_q or outside_r:
+                    self.add_obstacle(q, r)
     
+    ##### SIMULATION LOGIC #####
     def _get_move(self, ped: Pedestrian, rationality: float=0.8) -> tuple[int, int] | None:
         """
         Moving logic
@@ -136,7 +169,6 @@ class HexGrid:
         self.pedestrians.sort(key=lambda p: self.static_field[p.q, p.r])
         
         reached_target = []
-        
         for ped in self.pedestrians:
             next_move = self._get_move(ped)
             if next_move is None:

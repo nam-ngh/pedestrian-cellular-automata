@@ -49,9 +49,9 @@ class HexGridVisualizer:
                 self.patches[(q, r)] = hexagon
         
         self.text = self.ax.text(
-            0.02, 0.88, '', 
+            0.16, 0.80, '', 
             transform=self.ax.transAxes,
-            fontsize=12,
+            fontsize=10,
             color='white',
             verticalalignment='top',
             fontfamily='monospace',
@@ -63,7 +63,7 @@ class HexGridVisualizer:
         self.ax.axis('off')
         
         self.ax.set_title(
-            'Hexagonal Cellular Automata: Evacuation Dynamics in a 2-exit Circular Hall',
+            'Evacuation Dynamics in Hexagonal Cellular Automata',
             fontsize=18,
             color='white',
             pad=20
