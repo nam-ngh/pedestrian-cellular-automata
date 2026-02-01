@@ -26,12 +26,12 @@ def main(exits: str, seed: int=42):
 
     # Add exits
     if exits == 'opposite':
-        grid.build_side_doors(q_centre_offset=int(hex_side_len // 2) + 1, width=3) # 3oclock door
-        grid.build_side_doors(q_centre_offset=-(int(hex_side_len // 2) + 1), width=3) # 9oclock door
+        grid.build_long_doors(r_centre_offset=-int(hex_long_len // 2) - 1, width=3) # 6oclock door
+        grid.build_long_doors(r_centre_offset=int(hex_long_len // 2), width=3) # 12oclock door
         save_path = 'outputs/square_opposite_sim.gif'
     if exits == 'quarter':
         grid.build_side_doors(q_centre_offset=int(hex_side_len // 2) + 1, width=3) # 3oclock door
-        grid.build_long_doors(r_centre_offset=int(hex_long_len // 2) + 1, width=3) # 12oclock door
+        grid.build_long_doors(r_centre_offset=int(hex_long_len // 2), width=3) # 12oclock door
         save_path = 'outputs/square_quarter_sim.gif'
     
     ##### ADD PEOPLE #####

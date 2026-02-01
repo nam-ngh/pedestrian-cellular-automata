@@ -5,4 +5,4 @@ HEX_GRID_W, HEX_GRID_H = 106, 106
 CARTESIAN_SIDE = 22.36 # for area ~ 500m2
 
 # Circle Hall Size
-CARTESIAN_R = 12.62
+CARTESIAN_R = 12.62 # for area ~ 500m2

@@ -75,6 +75,24 @@ class HexGrid:
         return field
     
     ##### GRID CONSTRUCTION FUNCTIONS #####
+    def calibrate(self, q: int, r: int) -> tuple[int, int]:
+        """
+        Convert 'visual' coordinates to axial coordinates.
+        Compensates for the parallelogram skew so we can think
+        in terms of screen positions (rectangular grid).
+        
+        Args:
+            q: Horizontal position (same in both systems)
+            r: Vertical position (as if on rectangular grid)
+        
+        Returns:
+            (q, adjusted_r) in true axial coordinates
+        """
+        mid_q = self.width // 2
+        q_diff = q - mid_q
+        r_adjusted = r - q_diff // 2
+        return q, r_adjusted
+
     def set_targets(self, targets):
         for t in targets:
             q, r = t
@@ -112,7 +130,8 @@ class HexGrid:
         half_long = int(long_len // 2)
         for q in range(self.width):
             for r in range(self.height):
-                # Compensate for axial skew at every column
+                # Compensate for axial skew at every column 
+                # (not using adjusted func for clarity)
                 q_diff = q - centre_q
                 r_calibration = - int(q_diff // 2)
                 
@@ -132,32 +151,25 @@ class HexGrid:
 
     def build_side_doors(self, q_centre_offset: int, width: int):
         mid_w, mid_h = self.width // 2, self.height // 2
-        q = mid_w + q_centre_offset
-        r = mid_h - q_centre_offset // 2
+        q, r = self.calibrate(mid_w + q_centre_offset, mid_h)
         min_r = r - width // 2
-
         door_cells = []
         for i in range(width):
             door_cells.append((q, min_r + i))
         
-        if len(door_cells) > 0:
+        if door_cells:
             self.set_targets(door_cells)
             print(f'Added {width} side door cells at q = {q_centre_offset} from centre')
 
     def build_long_doors(self, r_centre_offset: int, width: int):
         mid_w, mid_h = self.width // 2, self.height // 2
-        q = mid_w
-        r = mid_h + r_centre_offset
-        min_q = q - width // 2
-
+        min_q = mid_w - width // 2
         door_cells = []
         for i in range(width):
-            door_q = min_q + i
-            q_diff = door_q - mid_w 
-            r_calibration = - int(q_diff // 2)
-            door_cells.append((door_q, r + r_calibration))
+            q, r = self.calibrate(min_q + i, mid_h + r_centre_offset)
+            door_cells.append((q, r))
         
-        if len(door_cells) > 0:
+        if door_cells:
             self.set_targets(door_cells)
             print(f'Added {width} long door cells at r = {r_centre_offset} from centre')
     
