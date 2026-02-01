@@ -1,7 +1,9 @@
+import numpy as np
+import random
+
 from modules.grid import HexGrid
 from modules.visualiser import HexGridVisualizer
-import random
-import numpy as np
+from config import NUM_PEOPLE, HEX_GRID_W, HEX_GRID_H, CARTESIAN_R
 
 def main(exits: str, seed: int=42):
     '''
@@ -12,83 +14,29 @@ def main(exits: str, seed: int=42):
     random.seed(seed)
     np.random.seed(seed)
 
-    ##### SIMULATION PARAMETERS #####
-    num_pedestrians = 500
-    cartesian_r = 12.62 # hall radius in cartesian coords
-    w, h = 106, 106 # parent grid dimensions
-    ##### _____________________ #####
+    ##### BUILD HALL #####
+    grid = HexGrid(HEX_GRID_W, HEX_GRID_H)
+    print(f"Created grid {HEX_GRID_W}x{HEX_GRID_H}")
 
-    # BUILD HALL
-    # Cartesian Area = 500
-    # Cartesian Radius ~ 12.62
-    # Avg axial Radius = 12.62/(0.2*1.616) ~ 39
-    # (hex_size = 0.2, 1 cartesian ~ 1 axial x 1.616)
-    # With flat-top orientation, side-r = 12.62/(0.2*1.5), long-r = 12.62/(0.2*np.sqrt(3))
-
-    grid = HexGrid(w, h)
-
-    hall_radius = int(cartesian_r//(0.2*1.616)) # hall radius in hex
+    hall_radius = int(CARTESIAN_R//(0.2*1.616)) # hall radius in hex
     grid.build_circular_hall(hall_radius)
-    
-    # Set exits
-    exit_doors = []
-    side_radius = int(cartesian_r // (0.2*1.5))
-    long_radius = int(cartesian_r // (0.2*np.sqrt(3)))
-    mid_w, mid_h = w // 2, h // 2
+    print(f'Built Circle Hall with radius {hall_radius} hex')
 
-    q_3oclock = mid_w + side_radius
-    q_9oclock = mid_w - side_radius
-    q_12oclock = mid_w
-
-    r_3oclock = mid_h - int(side_radius//2) # calibration for paralellogram
-    r_9oclock = mid_h + int(side_radius//2) # calibration for paralellogram
-    r_12oclock = mid_h + long_radius
+    # Add exits
+    side_radius = int(CARTESIAN_R // (0.2*1.5))
+    long_radius = int(CARTESIAN_R // (0.2*np.sqrt(3)))
 
     if exits == 'opposite':
-        # RHS doors
-        # exit_doors.append((q_3oclock, r_3oclock + 2))
-        exit_doors.append((q_3oclock, r_3oclock + 1))
-        exit_doors.append((q_3oclock, r_3oclock + 0))
-        exit_doors.append((q_3oclock, r_3oclock - 1))
-        # exit_doors.append((q_3oclock, r_3oclock - 2))
-        # LHS doors
-        # exit_doors.append((q_9oclock, r_9oclock + 2))
-        exit_doors.append((q_9oclock, r_9oclock + 1))
-        exit_doors.append((q_9oclock, r_9oclock + 0))
-        exit_doors.append((q_9oclock, r_9oclock - 1))
-        # exit_doors.append((q_9oclock, r_9oclock - 2))
+        grid.build_side_doors(q_centre_offset=side_radius, width=3) # 3oclock door
+        grid.build_side_doors(q_centre_offset=-side_radius, width=3) # 9oclock door
         save_path = 'outputs/circle_opposite_sim.gif'
-    elif exits == 'quarter':
-        # RHS doors
-        # exit_doors.append((q_3oclock, r_3oclock + 2))
-        exit_doors.append((q_3oclock, r_3oclock + 1))
-        exit_doors.append((q_3oclock, r_3oclock + 0))
-        exit_doors.append((q_3oclock, r_3oclock - 1))
-        # exit_doors.append((q_3oclock, r_3oclock - 2))
-        # Top doors
-        # exit_doors.append((q_12oclock + 2, r_12oclock - 2//2))
-        exit_doors.append((q_12oclock + 1, r_12oclock - 1//2))
-        exit_doors.append((q_12oclock + 0, r_12oclock - 0//2))
-        exit_doors.append((q_12oclock - 1, r_12oclock - (-1//2)))
-        # exit_doors.append((q_12oclock - 2, r_12oclock - (-2//2)))
+    if exits == 'quarter':
+        grid.build_side_doors(q_centre_offset=side_radius, width=3) # 3oclock door
+        grid.build_long_doors(r_centre_offset=long_radius, width=3) # 12oclock door
         save_path = 'outputs/circle_quarter_sim.gif'
-    else:
-        raise ValueError('Exits must be "opposite" or "quarter"')
-
-    if len(exit_doors) > 0:
-        grid.set_targets(exit_doors)
-
-    # Initialise pedestrian randomly
-    added = 0
-    for _ in range(num_pedestrians * 5):
-        if added >= num_pedestrians:
-            break
-        q = random.randint(1, w - 2)
-        r = random.randint(1, h - 2)
-        if grid.add_pedestrian(q, r, ped_id=added):
-            added += 1
     
-    print(f"Created grid {w}x{h}")
+    ##### ADD PEOPLE #####
+    grid.random_init_pedestrian(num_ped=NUM_PEOPLE)
     print(f"Added {len(grid.pedestrians)} pedestrians")
     
     # Create visualizer and save animation

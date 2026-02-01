@@ -129,6 +129,49 @@ class HexGrid:
                 
                 if outside_q or outside_r:
                     self.add_obstacle(q, r)
+
+    def build_side_doors(self, q_centre_offset: int, width: int):
+        mid_w, mid_h = self.width // 2, self.height // 2
+        q = mid_w + q_centre_offset
+        r = mid_h - q_centre_offset // 2
+        min_r = r - width // 2
+
+        door_cells = []
+        for i in range(width):
+            door_cells.append((q, min_r + i))
+        
+        if len(door_cells) > 0:
+            self.set_targets(door_cells)
+            print(f'Added {width} side door cells at q = {q_centre_offset} from centre')
+
+    def build_long_doors(self, r_centre_offset: int, width: int):
+        mid_w, mid_h = self.width // 2, self.height // 2
+        q = mid_w
+        r = mid_h + r_centre_offset
+        min_q = q - width // 2
+
+        door_cells = []
+        for i in range(width):
+            door_q = min_q + i
+            q_diff = door_q - mid_w 
+            r_calibration = - int(q_diff // 2)
+            door_cells.append((door_q, r + r_calibration))
+        
+        if len(door_cells) > 0:
+            self.set_targets(door_cells)
+            print(f'Added {width} long door cells at r = {r_centre_offset} from centre')
+    
+    def random_init_pedestrian(self, num_ped: int, seed: int=42):
+        # Initialise pedestrian randomly
+        random.seed(seed)
+        added = 0
+        for _ in range(num_ped * 5):
+            if added >= num_ped:
+                break
+            q = random.randint(1, self.width - 2)
+            r = random.randint(1, self.height - 2)
+            if self.add_pedestrian(q, r, ped_id=added):
+                added += 1
     
     ##### SIMULATION LOGIC #####
     def _get_move(self, ped: Pedestrian, rationality: float=0.8) -> tuple[int, int] | None:

@@ -1,7 +1,8 @@
+import numpy as np
+import random
 from modules.grid import HexGrid
 from modules.visualiser import HexGridVisualizer
-import random
-import numpy as np
+from config import HEX_GRID_W, HEX_GRID_H, CARTESIAN_SIDE, NUM_PEOPLE
 
 def main(exits: str, seed: int=42):
     '''
@@ -12,72 +13,29 @@ def main(exits: str, seed: int=42):
     random.seed(seed)
     np.random.seed(seed)
 
-    ##### SIMULATION PARAMETERS #####
-    num_pedestrians = 500
-    cartesian_side = 22.36
-    w, h = 106, 106 # parent grid dimensions
-    ##### _____________________ #####
+    ##### BUILD HALL #####
+    grid = HexGrid(HEX_GRID_W, HEX_GRID_H)
+    print(f"Created grid {HEX_GRID_W}x{HEX_GRID_H}")
 
-    # BUILD HALL
-    # Cartesian Area = 500
-    # Cartesian Square side len ~ 22.36
-    # With flat-top orientation, side-len = 22.36/(0.2*1.5), long-len = 22.36/(0.2*np.sqrt(3))
+    # Convert cartesian len to hex len for flat-top orientation
+    hex_side_len = int(CARTESIAN_SIDE // (0.2*1.5))
+    hex_long_len = int(CARTESIAN_SIDE // (0.2*np.sqrt(3)))
 
-    grid = HexGrid(w, h)
-
-    hex_side_len = int(cartesian_side // (0.2*1.5))
-    hex_long_len = int(cartesian_side // (0.2*np.sqrt(3)))
     grid.build_square_hall(side_len=hex_side_len, long_len=hex_long_len)
-    
-    # Set exits
-    exit_doors = []
-    mid_w, mid_h = w // 2, h // 2
+    print(f'Built Square Hall with size {hex_side_len} x {hex_long_len}')
 
-    q_3oclock = mid_w + int(hex_side_len // 2)
-    q_9oclock = mid_w - int(hex_side_len // 2)
-    q_12oclock = mid_w
-
-    r_3oclock = mid_h - int(hex_side_len // 4) # calibration for paralellogram
-    r_9oclock = mid_h + int(hex_side_len // 4) # calibration for paralellogram
-    r_12oclock = mid_h + int(hex_long_len // 2)
-
+    # Add exits
     if exits == 'opposite':
-        # RHS doors
-        exit_doors.append((q_3oclock, r_3oclock + 1))
-        exit_doors.append((q_3oclock, r_3oclock + 0))
-        exit_doors.append((q_3oclock, r_3oclock - 1))
-        # LHS doors
-        exit_doors.append((q_9oclock, r_9oclock + 1))
-        exit_doors.append((q_9oclock, r_9oclock + 0))
-        exit_doors.append((q_9oclock, r_9oclock - 1))
+        grid.build_side_doors(q_centre_offset=int(hex_side_len // 2) + 1, width=3) # 3oclock door
+        grid.build_side_doors(q_centre_offset=-(int(hex_side_len // 2) + 1), width=3) # 9oclock door
         save_path = 'outputs/square_opposite_sim.gif'
-    elif exits == 'quarter':
-        # RHS doors
-        exit_doors.append((q_3oclock, r_3oclock + 1))
-        exit_doors.append((q_3oclock, r_3oclock + 0))
-        exit_doors.append((q_3oclock, r_3oclock - 1))
-        # Top doors
-        exit_doors.append((q_12oclock + 1, r_12oclock - 1//2))
-        exit_doors.append((q_12oclock + 0, r_12oclock - 0//2))
-        exit_doors.append((q_12oclock - 1, r_12oclock - (-1//2)))
+    if exits == 'quarter':
+        grid.build_side_doors(q_centre_offset=int(hex_side_len // 2) + 1, width=3) # 3oclock door
+        grid.build_long_doors(r_centre_offset=int(hex_long_len // 2) + 1, width=3) # 12oclock door
         save_path = 'outputs/square_quarter_sim.gif'
-    else:
-        raise ValueError('Exits must be "opposite" or "quarter"')
-
-    if len(exit_doors) > 0:
-        grid.set_targets(exit_doors)
-
-    # Initialise pedestrian randomly
-    added = 0
-    for _ in range(num_pedestrians * 5):
-        if added >= num_pedestrians:
-            break
-        q = random.randint(1, w - 2)
-        r = random.randint(1, h - 2)
-        if grid.add_pedestrian(q, r, ped_id=added):
-            added += 1
     
-    print(f"Created grid {w}x{h}")
+    ##### ADD PEOPLE #####
+    grid.random_init_pedestrian(num_ped=NUM_PEOPLE)
     print(f"Added {len(grid.pedestrians)} pedestrians")
     
     # Create visualizer and save animation
