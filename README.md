@@ -20,4 +20,4 @@ Simulation sequences for each designed scenario are stored in [outputs](https://
 - Hall Area: 500m2
 - Maximum 2 exit doors, each 1.2m in width,
 
-a [circular hall](https://github.com/nam-ngh/pedestrian-cellular-automata/blob/main/outputs/circle_opposite_sim.gif) design with opposite exits and NO obstacle placements were found to be the most effective for evacuation.
+a [circular hall](https://github.com/nam-ngh/pedestrian-cellular-automata/blob/main/outputs/circle_opposite_sim.gif) design with opposite exits and NO obstacle placements were found to be the most effective for evacuation. Though square and circular halls offer quite similar evacuation time performance, the circular design was chosen for savings in construction materials due to smaller perimeter with a fixed area.
